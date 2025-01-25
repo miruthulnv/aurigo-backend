@@ -13,7 +13,7 @@ user_fields = {
 
 def check_existing_user(email):
     try:
-        with Session() as session:
+        with session_scope() as session:
             user_exists = session.query(User).filter_by(email=email).first() is not None
             if user_exists:
                 return True
