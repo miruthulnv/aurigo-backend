@@ -3,11 +3,13 @@ from flask_restful import Resource, Api, reqparse, fields, marshal_with
 from app.models.user import User
 from werkzeug.security import generate_password_hash
 from app.models.database import session_scope
+from sqlalchemy.exc import SQLAlchemyError
+
 user_fields = {
     'id': fields.Integer,
     'name': fields.String,
     'email': fields.String,
-    'company_id': fields.Integer,
+    'company_id': fields.String,
     'is_admin': fields.Boolean
 }
 
@@ -63,7 +65,7 @@ class UserResource(Resource):
         parser.add_argument('name', type=str, required=True)
         parser.add_argument('email', type=str, required=True)
         parser.add_argument('password', type=str, required=True)
-        parser.add_argument('company_id', type=int, required=True)
+        parser.add_argument('company_id', type=str, required=True)
         parser.add_argument('is_admin', type=bool, default=False)
         args = parser.parse_args()
 

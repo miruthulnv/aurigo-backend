@@ -16,6 +16,7 @@ class Tender(Base):
     category = db.Column(db.String(100), nullable=False)
     requirements = db.Column(db.JSON, nullable=False)
     status = db.Column(db.String(20), nullable=False)
+    bids = db.relationship("Bid", back_populates="tender")
 
     def __init__(self, id, title, description, publish_date, closing_date, estimated_value, currency, category, requirements, status):
         self.id = id
