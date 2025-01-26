@@ -29,3 +29,4 @@ class Bid(Base):
 
     def __repr__(self):
         return f"<Bid(id={self.id}, bidder_id={self.bidder_id}, company_name='{self.company_name}', bid_cost={self.bid_cost}, proposed_timeline={self.proposed_timeline} days)>"
+

@@ -135,3 +135,52 @@ class BidResource(Resource):
             'proposed_timeline': bid.proposed_timeline,
             'tender_id': bid.tender_id,
         }
+
+class BidsByUserResource(Resource):
+    @staticmethod
+    def bid_to_dict(bid):
+        return {
+            'id': bid.id,
+            'bidder_id': bid.bidder_id,
+            'company_name': bid.company_name,
+            'bid_cost': bid.bid_cost,
+            'proposed_timeline': bid.proposed_timeline,
+            'tender_id': bid.tender_id,
+            'overall_score': bid.overall_score,
+            'readable_insights': bid.readable_insights
+        }
+
+    def get(self, user_id):
+        try:
+            with session_scope() as session:
+                bids = session.query(Bid).filter(Bid.bidder_id == user_id).all()
+                if not bids:
+                    return {'message': 'No bids found for the specified user'}, 404
+                return [self.bid_to_dict(bid) for bid in bids]
+        except SQLAlchemyError:
+            return {'message': 'An error occurred while fetching bids'}, 500
+
+
+class BidsByTenderResource(Resource):
+    @staticmethod
+    def bid_to_dict(bid):
+        return {
+            'id': bid.id,
+            'bidder_id': bid.bidder_id,
+            'company_name': bid.company_name,
+            'bid_cost': bid.bid_cost,
+            'proposed_timeline': bid.proposed_timeline,
+            'tender_id': bid.tender_id,
+            'overall_score': bid.overall_score,
+            'readable_insights': bid.readable_insights
+        }
+
+    def get(self, tender_id):
+        try:
+            with session_scope() as session:
+                bids = session.query(Bid).filter(Bid.tender_id == tender_id).all()
+                if not bids:
+                    return {'message': 'No bids found for the specified tender'}, 404
+                return [self.bid_to_dict(bid) for bid in bids]
+        except SQLAlchemyError:
+            return {'message': 'An error occurred while fetching bids'}, 500

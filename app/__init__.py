@@ -23,7 +23,7 @@ def create_app():
     from app.services.bid_optimization import BidOptimization
     from app.services.user import UserResource
     from app.services.tender import TenderResource
-    from app.services.bids import BidResource
+    from app.services.bids import BidResource, BidsByUserResource, BidsByTenderResource
     from app.services.company_scores import company_scores_bp
     from app.services.rankedBids import ranked_bids_bp
 
@@ -32,6 +32,8 @@ def create_app():
     api.add_resource(BidOptimization, '/api/optimize-bid')
     api.add_resource(UserResource, '/api/user/<int:user_id>')
     api.add_resource(BidResource, '/api/bid/<int:bid_id>','/api/bid')
+    api.add_resource(BidsByUserResource,'/api/bids/user/<int:user_id>')
+    api.add_resource(BidsByTenderResource,'/api/bids/tender/<string:tender_id>')
     app.register_blueprint(company_scores_bp)
     app.register_blueprint(ranked_bids_bp)
     return app
