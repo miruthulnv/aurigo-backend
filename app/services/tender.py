@@ -24,8 +24,8 @@ class TenderResource(Resource):
             'currency': tender.currency,
             'email': tender.email,
             'category': tender.category,
-            'publish_date': tender.publish_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            'closing_date': tender.closing_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            'publish_date': tender.publish_date,
+            'closing_date': tender.closing_date,
             'status': tender.status
         }
 

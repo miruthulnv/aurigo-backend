@@ -1,10 +1,11 @@
 from flask import request
+from flask_jwt_extended import get_jwt_identity
 from flask_restful import Resource, Api, reqparse, fields, marshal_with
 from app.models.user import User
 from werkzeug.security import generate_password_hash
 from app.models.database import session_scope
 from sqlalchemy.exc import SQLAlchemyError
-
+from flask_jwt_extended import jwt_required,get_jwt_identity
 user_fields = {
     'id': fields.Integer,
     'name': fields.String,
@@ -27,9 +28,10 @@ def check_existing_user(email):
 
 class UserResource(Resource):
     @marshal_with(user_fields)
-    @marshal_with(user_fields)
+    @jwt_required()
     def get(self, user_id=None):
         try:
+            user_id = get_jwt_identity()
             with session_scope() as session:
                 if user_id:
                     user = session.query(User).get(user_id)

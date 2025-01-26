@@ -15,6 +15,54 @@ class Tender:
         self.id = id
         self.requirements = requirements
 
+def generate_comparative_insights(ranked_bidders, merged_df, requirements):
+    insights = {}
+
+    # Calculate feature medians for comparison
+    median_bid_cost = merged_df['bid_cost'].median()
+    median_timeline = merged_df['proposed_timeline'].median()
+
+    for _, bidder in ranked_bidders.iterrows():
+        bidder_id = bidder['bidder_id']
+        bidder_details = merged_df[merged_df['bidder_id'] == bidder_id].iloc[0]
+
+        # List to store comparative insights
+        bidder_insights = []
+
+        # Bid Cost Comparison
+        if bidder_details['bid_cost'] < median_bid_cost:
+            cost_diff_percent = ((median_bid_cost - bidder_details['bid_cost']) / median_bid_cost) * 100
+            bidder_insights.append(
+                f"Bid cost is {cost_diff_percent:.1f}% lower than average, which positively impacted the score.")
+        elif bidder_details['bid_cost'] > median_bid_cost:
+            cost_diff_percent = ((bidder_details['bid_cost'] - median_bid_cost) / median_bid_cost) * 100
+            bidder_insights.append(
+                f"Bid cost is {cost_diff_percent:.1f}% higher than average, which negatively impacted the score.")
+
+        # Timeline Comparison
+        if bidder_details['proposed_timeline'] < median_timeline:
+            timeline_diff_percent = ((median_timeline - bidder_details['proposed_timeline']) / median_timeline) * 100
+            bidder_insights.append(
+                f"Proposed timeline is {timeline_diff_percent:.1f}% shorter than average, which was viewed positively.")
+        elif bidder_details['proposed_timeline'] > median_timeline:
+            timeline_diff_percent = ((bidder_details['proposed_timeline'] - median_timeline) / median_timeline) * 100
+            bidder_insights.append(
+                f"Proposed timeline is {timeline_diff_percent:.1f}% longer than average, which negatively impacted the score.")
+
+        # Compliance Comparison
+        compliance_count = merged_df['compliance'].sum()
+        total_bids = len(merged_df)
+        compliance_rate = compliance_count / total_bids * 100
+
+        if bidder_details['compliance']:
+            bidder_insights.append(
+                f"Compliance status is better than {(1 - compliance_rate / 100) * 100:.1f}% of other bids.")
+        else:
+            bidder_insights.append("Non-compliant bid significantly reduced the final score.")
+
+        insights[bidder_id] = " ".join(bidder_insights)
+
+    return insights
 
 @ranked_bids_bp.route('/api/evaluate-bids', methods=['POST'])
 def evaluate_bids():
@@ -122,10 +170,11 @@ def evaluate_bids():
     ranked_bidders["lime_insights"] = [i["lime_explanation"] for i in insights]
 
     ranked_bidders["readable_insights"] = [
-        generate_readable_insights(bid["lime_insights"], bid["bidder_id"])
+        generate_comparative_insights(ranked_bidders, merged_df, requirements)[bid["bidder_id"]]
         for bid in ranked_bidders.to_dict(orient="records")
     ]
     return jsonify({"ranked_bidders": ranked_bidders.to_dict(orient="records")})
+
 
 
 def predict_fn(input_data, requirements):

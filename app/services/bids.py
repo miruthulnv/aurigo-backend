@@ -1,4 +1,6 @@
 from flask_restful import Resource, reqparse
+from numpy.ma.core import true_divide
+
 from app.models.bids import Bid
 from app.models.database import session_scope
 from sqlalchemy.exc import SQLAlchemyError
@@ -163,24 +165,62 @@ class BidsByUserResource(Resource):
 
 class BidsByTenderResource(Resource):
     @staticmethod
-    def bid_to_dict(bid):
+    def tender_to_dict(tender):
         return {
-            'id': bid.id,
-            'bidder_id': bid.bidder_id,
-            'company_name': bid.company_name,
-            'bid_cost': bid.bid_cost,
-            'proposed_timeline': bid.proposed_timeline,
-            'tender_id': bid.tender_id,
-            'overall_score': bid.overall_score,
-            'readable_insights': bid.readable_insights
+            "tender": {
+                "id": tender.id,
+                "requirements": {
+                    "estimated_cost": tender.est_cost,
+                    "estimated_timeline": tender.est_timeline,
+                    "cost_weight": tender.cost_weight,
+                    "timeline_weight": tender.timeline_weight,
+                    "compliance_weight": tender.compliance_weight,
+                    "current_factors_weight": tender.current_factors_weight,
+                    "historical_rating_weight": tender.historical_rating_weight
+                }
+            }
+        }
+
+    @staticmethod
+    def bid_to_evaluation_format(bid):
+        return {
+            "bidder_id": bid.company_name,
+            "bid_cost": bid.bid_cost,
+            "proposed_timeline": bid.proposed_timeline,
+            "compliance": True
         }
 
     def get(self, tender_id):
         try:
             with session_scope() as session:
+                # Fetch tender details
+                tender = session.query(Tender).get(tender_id)
+                if not tender:
+                    return {'message': 'Tender not found'}, 404
+
+                # Fetch all bids for the tender
                 bids = session.query(Bid).filter(Bid.tender_id == tender_id).all()
                 if not bids:
                     return {'message': 'No bids found for the specified tender'}, 404
-                return [self.bid_to_dict(bid) for bid in bids]
-        except SQLAlchemyError:
-            return {'message': 'An error occurred while fetching bids'}, 500
+
+                # Format data for evaluation
+                evaluation_data = self.tender_to_dict(tender)
+                evaluation_data["bids"] = [self.bid_to_evaluation_format(bid) for bid in bids]
+                # print(evaluation_data)
+                # Send to evaluation endpoint
+                response = requests.post(
+                    'http://localhost:5000/api/evaluate-bids',
+                    json=evaluation_data
+                )
+
+                # if response.status_code != 200:
+                #     return {'message': 'Evaluation service error'}, 500
+                print(response)
+                return response.json()
+
+        except SQLAlchemyError as e:
+            return {'message': 'An error occurred while fetching data'}, 500
+        except requests.RequestException as e:
+            print(e)
+
+            return {'message': 'Error connecting to evaluation service'}, 500

@@ -21,7 +21,7 @@ def login():
             if user and check_password_hash(user.password_hash, password):
                 role = 'admin' if user.is_admin else 'user'
                 access_token = create_access_token(
-                    identity=user.id,
+                    identity=str(user.id),
                     additional_claims={'role': role},
                     expires_delta=timedelta(hours=100)
                 )
