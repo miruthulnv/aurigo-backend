@@ -13,7 +13,8 @@ class Bid(Base):
     bid_cost = Column(Float, nullable=False)
     proposed_timeline = Column(Integer, nullable=False)  # in days
     tender_id = Column(String, ForeignKey('tenders.id'), nullable=False)
-
+    overall_score = Column(Integer,nullable=True)
+    readable_insights = Column(String,nullable=True)
     # Relationships
     # Matching string-based relationship
     bidder = relationship("User", back_populates="bids")

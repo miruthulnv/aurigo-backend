@@ -2,6 +2,35 @@ from flask_restful import Resource, reqparse
 from app.models.bids import Bid
 from app.models.database import session_scope
 from sqlalchemy.exc import SQLAlchemyError
+from app.models.tender import Tender
+import json
+import requests
+
+
+def convert_tender_to_json(session, tender_id: str):
+    # Query the tender table
+    tender = session.query(Tender).filter_by(id=tender_id).first()
+
+    if not tender:
+        return None
+
+    # Convert the tender to the specified JSON format
+    tender_json = {
+
+            "id": tender.id,
+            "requirements": {
+                "estimated_cost": tender.est_cost,
+                "estimated_timeline": tender.est_timeline,
+                "cost_weight": tender.cost_weight,
+                "timeline_weight": tender.timeline_weight,
+                "compliance_weight": tender.compliance_weight,
+                "current_factors_weight": tender.current_factors_weight,
+                "historical_rating_weight": tender.historical_rating_weight
+
+        }
+    }
+
+    return tender_json
 
 class BidResource(Resource):
     def get(self, bid_id=None):
@@ -36,6 +65,26 @@ class BidResource(Resource):
                     proposed_timeline=args['proposed_timeline'],
                     tender_id=args['tender_id']
                 )
+                url="http://localhost:5000/api/evaluate-bids"
+                tender_details= convert_tender_to_json(session, args['tender_id'])
+                bidder_details = [{"bidder_id": args['company_name'], "bid_cost": args['bid_cost'], "proposed_timeline": args['proposed_timeline'], "compliance": True}]
+                data={"tender": tender_details, "bids": bidder_details}
+                headers = {'Content-Type': 'application/json'}
+                print(data)
+                response = requests.post(url, data=json.dumps(data), headers=headers)
+                print(response)
+                try:
+                    parsed = response.json()
+                    print(parsed)
+                    new_bid.overall_score = parsed['ranked_bidders'][0]['final_score']
+                    new_bid.readable_insights = parsed['ranked_bidders'][0]['readable_insights']
+
+                except ValueError:  # catches JSONDecodeError as well
+                    print("Response did not return valid JSON.")
+                    parsed = None
+                    new_bid.overall_score =  0
+                # print(parsed)
+
                 session.add(new_bid)
                 session.flush()
                 return self.bid_to_dict(new_bid), 201

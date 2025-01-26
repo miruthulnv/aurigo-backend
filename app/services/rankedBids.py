@@ -16,28 +16,54 @@ class Tender:
         self.requirements = requirements
 
 
-@ranked_bids_bp.route('/api/evaluate-bids', methods=['POST', 'GET'])
+@ranked_bids_bp.route('/api/evaluate-bids', methods=['POST'])
 def evaluate_bids():
     # Mock data for tender and bids (replace with actual DB query)
-    tender = Tender(
-        id="Tender_123",
-        requirements={
-            "estimated_cost": 1000000,
-            "estimated_timeline": 120,
-            "cost_weight": 0.4,
-            "timeline_weight": 1.2,
-            "compliance_weight": 0.1,
-            "current_factors_weight": 0.6,
-            "historical_rating_weight": 0.4
-        }
-    )
+    # tender = Tender(
+    #     id="Tender_123",
+    #     requirements={
+    #         "estimated_cost": 1000000,
+    #         "estimated_timeline": 120,
+    #         "cost_weight": 0.4,
+    #         "timeline_weight": 1.2,
+    #         "compliance_weight": 0.1,
+    #         "current_factors_weight": 0.6,
+    #         "historical_rating_weight": 0.4
+    #     }
+    # )
 
     # Example current bids (replace with actual data from DB)
-    current_bids = [
-        {"bidder_id": "Company_132", "bid_cost": 950000, "proposed_timeline": 100, "compliance": True},
-        {"bidder_id": "Company_701", "bid_cost": 1000000, "proposed_timeline": 120, "compliance": True},
-        {"bidder_id": "Company_603", "bid_cost": 980000, "proposed_timeline": 130, "compliance": False}
-    ]
+    # current_bids = [
+    #     {"bidder_id": "Company_132", "bid_cost": 950000, "proposed_timeline": 100, "compliance": True},
+    #     {"bidder_id": "Company_701", "bid_cost": 1000000, "proposed_timeline": 120, "compliance": True},
+    #     {"bidder_id": "Company_603", "bid_cost": 980000, "proposed_timeline": 130, "compliance": False}
+    # ]
+
+    # Get Tender and current bids from the body
+    data = request.get_json()
+    # print("Inside evaluate bids")
+    print(data)
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    tender_data = (data.get('tender'))
+    tender = Tender(
+        id=tender_data.get('id', 'Unknown'),
+        requirements={
+            "estimated_cost": tender_data.get('requirements', {}).get('estimated_cost', 0),
+            "estimated_timeline": tender_data.get('requirements', {}).get('estimated_timeline', 0),
+            "cost_weight": tender_data.get('requirements', {}).get('cost_weight', 0),
+            "timeline_weight": tender_data.get('requirements', {}).get('timeline_weight', 0),
+            "compliance_weight": tender_data.get('requirements', {}).get('compliance_weight', 0),
+            "current_factors_weight": tender_data.get('requirements', {}).get('current_factors_weight', 0),
+            "historical_rating_weight": tender_data.get('requirements', {}).get('historical_rating_weight', 0)
+        }
+    )
+    current_bids = (data.get('bids'))
+    print(tender)
+    print(current_bids)
+    if not tender or not current_bids:
+        return jsonify({"error": "Missing tender or bids data"}), 400
 
     # Fetch historical ratings from the `history.py` API
     history_url = "http://127.0.0.1:5000/api/company-ratings"  # Replace with the correct URL

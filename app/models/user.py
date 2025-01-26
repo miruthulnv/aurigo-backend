@@ -11,7 +11,7 @@ class User(Base):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-    company_id = db.Column(db.String,nullable=False)
+    company_id = db.Column(db.String,unique=True,nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     # String-based relationship
     bids = relationship("Bid", back_populates="bidder")
